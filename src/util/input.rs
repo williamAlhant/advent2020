@@ -1,3 +1,4 @@
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -8,4 +9,11 @@ pub fn lines(input_file_path: String) -> impl Iterator<Item = String> {
     let lines = BufReader::new(file).lines()
         .map(|l| l.unwrap_or_else(exit_with_error_message));
     lines
+}
+
+pub fn lines_from_file_passed_as_argument() -> impl Iterator<Item = String> {
+    let mut args = env::args();
+    assert!(args.len() >= 2);
+    let input_path = args.nth(1).unwrap();
+    lines(input_path)
 }
