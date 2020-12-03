@@ -1,21 +1,21 @@
 use advent2020::util::input;
-use advent2020::util::error_handling::ResultOkPrintErrExt;
+use anyhow::{Context, Result, anyhow, bail};
 use std::fmt::Write;
 
-fn main() {
+fn main() -> Result<()> {
     
     let lines = input::lines_from_file_passed_as_argument();
 
-    let ans = do_the_thing(lines);
-    if let Some(ans) = ans {
-        println!("Answer: {}", ans);
-    }
+    let ans = do_the_thing(lines)?;
+    println!("Answer: {}", ans);
+
+    Ok(())
 }
 
-fn do_the_thing<L>(lines: L) -> Option<u64> 
+fn do_the_thing<L>(lines: L) -> Result<u64>
     where L: IntoIterator<Item = String> {
 
-    let map = Map::from_lines(lines).ok_or_print_err("Map construction failed")?;
+    let map = Map::from_lines(lines).context("Map construction")?;
     
     let a0 = find_num_trees(&map, 1, 1).unwrap() as u64;
     let a1 = find_num_trees(&map, 3, 1).unwrap() as u64;
@@ -23,7 +23,7 @@ fn do_the_thing<L>(lines: L) -> Option<u64>
     let a3 = find_num_trees(&map, 7, 1).unwrap() as u64;
     let a4 = find_num_trees(&map, 1, 2).unwrap() as u64;
 
-    Some(a0 * a1 * a2 * a3 * a4)
+    Ok(a0 * a1 * a2 * a3 * a4)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -59,13 +59,13 @@ impl Map {
         Some(self.data[y * self.width + x])
     }
 
-    fn from_lines<L>(lines: L) -> Option<Self>
+    fn from_lines<L>(lines: L) -> Result<Self>
         where L: IntoIterator<Item = String> {
     
         let mut map = Map::new();
         let mut lines = lines.into_iter();
         
-        let first_line = lines.next().ok_or_print_err("No lines")?;
+        let first_line = lines.next().ok_or_else(|| anyhow!("No lines"))?;
         let mut line_count = 1;
 
         map.width = first_line.len();
@@ -73,18 +73,18 @@ impl Map {
         let mut squares: Vec<Square> = Vec::new();
         squares.resize(map.width, Square::Open);
         
-        line_to_squares(&first_line, &mut squares).ok_or_print_err("line_to_squares failed")?;
+        line_to_squares(&first_line, &mut squares)?;
         map.extend_data(&squares);
 
         for line in lines {
-            line_to_squares(&line, &mut squares).ok_or_print_err("line_to_squares failed")?;
+            line_to_squares(&line, &mut squares)?;
             map.extend_data(&squares);
             line_count += 1;
         }
 
         map.heigth = line_count;
 
-        Some(map)
+        Ok(map)
     }
 }
 
@@ -104,16 +104,16 @@ impl std::fmt::Display for Map {
     }
 }
 
-fn line_to_squares<'a>(line: &String, squares: &'a mut Vec<Square>) -> Result<(), &'a str> {
+fn line_to_squares(line: &String, squares: &mut Vec<Square>) -> Result<()> {
     if line.len() != squares.len() {
-        return Err("Unexpected line size");
+        bail!("Unexpected line size");
     }
 
     for (i, c) in line.chars().enumerate() {
         squares[i] = match c {
             '.' => Square::Open,
             '#' => Square::Tree,
-            _ => return Err("Unexpected square char")
+            _ => bail!("Unexpected square char")
         };
     }
 

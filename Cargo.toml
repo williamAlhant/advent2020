@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 regex = "*"
+anyhow = "*"
 
 [[bin]]
 name = "day01"
