@@ -20,16 +20,7 @@ where L: IntoIterator<Item = String> {
     for line in lines.into_iter() {
         if line.is_empty() {
             let passport = PassportBeforeValidation::from_paragraph(&paragraph);
-            if passport.byr.is_empty() ||
-            passport.iyr.is_empty() ||
-            passport.eyr.is_empty() ||
-            passport.hgt.is_empty() ||
-            passport.hcl.is_empty() ||
-            passport.ecl.is_empty() ||
-            passport.pid.is_empty() {
-
-            }
-            else {
+            if valid_passport(&passport) {
                 num_valid += 1;
             }
 
@@ -124,6 +115,72 @@ impl PassportBeforeValidation {
     }
 }
 
+struct ValidatedPassport {
+
+}
+
+impl ValidatedPassport {
+    fn from_unvalidated(p: &PassportBeforeValidation) -> Result<ValidatedPassport> {
+
+        let byr = p.byr.parse::<u32>()?;
+        if !(1920..=2002).contains(&byr) {
+            bail!("");
+        }
+
+        let iyr = p.iyr.parse::<u32>()?;
+        if !(2010..=2020).contains(&iyr) {
+            bail!("");
+        }
+
+        let eyr = p.eyr.parse::<u32>()?;
+        if !(2020..=2030).contains(&eyr) {
+            bail!("");
+        }
+
+        if p.hgt.len() < 2 {
+            bail!("");
+        }
+        let hgt = p.hgt[0..(p.hgt.len() - 2)].parse::<u32>()?;
+        match &p.hgt[(p.hgt.len() - 2)..] {
+            "cm" => {
+                if !(150..=193).contains(&hgt) {
+                    bail!("");
+                }
+            },
+            "in" => {
+                if !(59..=76).contains(&hgt) {
+                    bail!("");
+                }
+            },
+            _ => bail!("")
+        }
+
+        if !p.hcl.starts_with("#") {
+            bail!("");
+        }
+        if !p.hcl[1..].chars().all(|c| c.is_ascii_hexdigit()) {
+            bail!("");
+        }
+
+        let allowed_ecl_values = 
+            vec!["amb", "blu", "brn", "gry", "grn", "hzl", "oth"];
+        if !allowed_ecl_values.contains(&p.ecl.as_str()) {
+            bail!("");
+        }
+
+        if p.pid.chars().count() != 9 || !p.pid.chars().all(|c| c.is_ascii_digit()) {
+            bail!("");
+        }
+
+        Ok(ValidatedPassport {})
+    }
+}
+
+fn valid_passport(p: &PassportBeforeValidation) -> bool {
+   let p = ValidatedPassport::from_unvalidated(p);
+   p.is_ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -153,5 +210,44 @@ mod tests {
         assert!(passport.iyr == "2017");
         assert!(passport.cid == "147");
         assert!(passport.hgt == "183cm");
+    }
+
+    #[test]
+    fn valid_passports() {
+        assert!(valid_passport(&PassportBeforeValidation {
+            pid:"087499704".to_string(), hgt:"74in".to_string(), ecl:"grn".to_string(), 
+            iyr:"2012".to_string(), eyr:"2030".to_string(), byr:"1980".to_string(), hcl:"#623a2f".to_string(),
+            ..Default::default()
+        }));
+
+        assert!(valid_passport(&PassportBeforeValidation {
+            eyr:"2029".to_string(), ecl:"blu".to_string(), cid:"129".to_string(), byr:"1989".to_string(),
+            iyr:"2014".to_string(), pid:"896056539".to_string(), hcl:"#a97842".to_string(), hgt:"165cm".to_string(),
+            ..Default::default()
+        }));
+
+        assert!(valid_passport(&PassportBeforeValidation {
+            hcl:"#888785".to_string(),
+            hgt:"164cm".to_string(), byr:"2001".to_string(), iyr:"2015".to_string(), cid:"88".to_string(),
+            pid:"545766238".to_string(), ecl:"hzl".to_string(),
+            eyr:"2022".to_string(),
+            ..Default::default()
+        }));
+
+        assert!(valid_passport(&PassportBeforeValidation {
+            iyr:"2010".to_string(), hgt:"158cm".to_string(), hcl:"#b6652a".to_string(), ecl:"blu".to_string(), 
+            byr:"1944".to_string(), eyr:"2021".to_string(), pid:"093154719".to_string(),
+            ..Default::default()
+        }));
+    }
+
+    #[test]
+    fn invalid_passports() {
+        assert!(!valid_passport(&PassportBeforeValidation {
+            eyr:"1972".to_string(), cid:"100".to_string(), hcl:"#18171d".to_string(), 
+            ecl:"amb".to_string(), hgt:"170".to_string(), pid:"186cm".to_string(), iyr:"2018".to_string(),
+            byr:"1926".to_string(),
+            ..Default::default()
+        }));
     }
 }
