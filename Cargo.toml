@@ -14,3 +14,7 @@ thiserror = "*"
 [[bin]]
 name = "day04"
 path = "src/days/day04.rs"
+
+[[bin]]
+name = "day05"
+path = "src/days/day05.rs"
