@@ -9,18 +9,7 @@ edition = "2018"
 [dependencies]
 regex = "*"
 anyhow = "*"
-
-[[bin]]
-name = "day01"
-path = "src/days/day01.rs"
-
-[[bin]]
-name = "day02"
-path = "src/days/day02.rs"
-
-[[bin]]
-name = "day03"
-path = "src/days/day03.rs"
+thiserror = "*"
 
 [[bin]]
 name = "day04"

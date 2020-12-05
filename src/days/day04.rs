@@ -1,9 +1,10 @@
 use advent2020::util::input;
-use anyhow::{Context, Result, anyhow, bail};
+use advent2020::util;
+use anyhow::{Result, bail};
 
 fn main() -> Result<()> {
     
-    let lines = input::lines_from_file_passed_as_argument();
+    let lines = input::lines_from_file_passed_as_argument()?;
 
     let ans = do_the_thing(lines)?;
     println!("Answer: {}", ans);
@@ -11,13 +12,13 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn do_the_thing<L>(lines: L) -> Result<u64>
-where L: IntoIterator<Item = String> {
+fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64> {
     
     let mut num_valid = 0;
     let mut paragraph = String::new();
 
     for line in lines.into_iter() {
+        let line = line?;
         if line.is_empty() {
             let passport = PassportBeforeValidation::from_paragraph(&paragraph);
             if valid_passport(&passport) {

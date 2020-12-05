@@ -2,18 +2,20 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
-use super::error_handling::exit_with_error_message;
+use super::error_handling::{Error, Result};
 
-pub fn lines(input_file_path: String) -> impl Iterator<Item = String> {
-    let file = File::open(input_file_path).unwrap_or_else(exit_with_error_message);
+pub fn lines(input_file_path: String) -> Result<impl Iterator<Item = Result<String>>> {
+    let file = File::open(input_file_path).map_err(|source| Error::OpenFile { source })?;
     let lines = BufReader::new(file).lines()
-        .map(|l| l.unwrap_or_else(exit_with_error_message));
-    lines
+        .map(|l| l.map_err(|source| Error::ReadLines { source }));
+    Ok(lines)
 }
 
-pub fn lines_from_file_passed_as_argument() -> impl Iterator<Item = String> {
+pub fn lines_from_file_passed_as_argument() -> Result<impl Iterator<Item = Result<String>>> {
     let mut args = env::args();
-    assert!(args.len() >= 2);
+    if args.len() < 2 {
+        return Err(Error::MissingInputPathArgument);
+    }
     let input_path = args.nth(1).unwrap();
     lines(input_path)
 }
