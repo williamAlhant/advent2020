@@ -1,6 +1,7 @@
 use advent2020::util::input;
 use advent2020::util;
 use anyhow::{Result, bail};
+use std::{iter::FromIterator, collections::HashSet};
 
 fn main() -> Result<()> {
     
@@ -13,15 +14,26 @@ fn main() -> Result<()> {
 }
 
 fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u16> {
-    let mut ids: Vec<u16> = Vec::new();
+    let mut ids: HashSet<u16> = HashSet::new();
+    for i in 0..1024 {
+        ids.insert(i);
+    }
+
     for line in lines.into_iter() {
         let line = line?;
-        ids.push(id_from_str(&line)?);
+        ids.remove(&id_from_str(&line)?);
     }
-    if ids.is_empty() {
-        bail!("ids vector is empty");
+
+    let mut ids = Vec::from_iter(ids);
+    ids.sort();
+
+    for i in 1..(ids.len() - 1) {
+        if ids[i - 1] != ids[i] - 1 && ids[i + 1] != ids[i] + 1 {
+            return Ok(ids[i]);
+        }
     }
-    Ok(ids.iter().max().unwrap().clone())
+
+    bail!("No suitable id found");
 }
 
 fn id_from_str(s: &str) -> Result<u16> {
