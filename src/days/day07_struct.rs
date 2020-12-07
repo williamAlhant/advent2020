@@ -6,6 +6,7 @@ pub struct BagTypeRegist {
     str_to_index: std::collections::HashMap<String, BagType>
 }
 
+#[derive(Default)]
 pub struct NumBags {
     pub num: usize,
     pub bag_type: BagType
