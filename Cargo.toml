@@ -10,6 +10,7 @@ edition = "2018"
 regex = "*"
 anyhow = "*"
 thiserror = "*"
+nom = "*"
 
 [[bin]]
 name = "day04"
@@ -22,3 +23,7 @@ path = "src/days/day05.rs"
 [[bin]]
 name = "day06"
 path = "src/days/day06.rs"
+
+[[bin]]
+name = "day07"
+path = "src/days/day07.rs"
