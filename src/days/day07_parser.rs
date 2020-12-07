@@ -25,17 +25,18 @@ pub fn parse_rule<'a>(i: &'a str, regist: &mut BagTypeRegist) -> IResult<&'a str
     Ok((i, rule))
 }
 
-fn parse_elements(
-    rule: &mut Rule,
-    regist: &mut BagTypeRegist
-) -> impl FnMut(&str) -> IResult<&str, ()> {
+fn parse_elements<'a>(
+    rule: &'a mut Rule,
+    regist: &'a mut BagTypeRegist
+) -> impl FnMut(&str) -> IResult<&str, ()> + 'a {
 
-    |i: &str| {
-        let parsed = many1_count(
+    move |i: &str| {
+        let (i_remain, _) = many1_count(
             |j: &str| {
+
                 let mut rule_el = NumBags::default();
 
-                let (remain, digits) = digit1(i)?;
+                let (remain, digits) = digit1(j)?;
                 rule_el.num = digits.parse().unwrap();
 
                 let (remain, bag_type) = preceded(
@@ -57,7 +58,7 @@ fn parse_elements(
                 Ok((remain, ()))
             }
         )(i)?;
-        Ok((parsed.0,()))
+        Ok((i_remain,()))
     }
 }
 
