@@ -11,6 +11,7 @@ pub struct NumBags {
     pub bag_type: BagType
 }
 
+#[derive(Default)]
 pub struct Rule {
     pub bag_type: BagType,
     pub elements: Vec<NumBags>
@@ -46,13 +47,21 @@ impl Rule {
 }
 
 impl BagTypeRegist {
-    pub fn add(&mut self, bag_type: String) {
+    pub fn add(&mut self, bag_type: String) -> BagType {
         self.index_to_str.push(bag_type.clone());
         self.str_to_index.insert(bag_type, self.index_to_str.len() - 1);
+        self.index_to_str.len() - 1
     }
 
-    pub fn get_type(&self, s: &str) -> Option<BagType> {
+    pub fn get(&self, s: &str) -> Option<BagType> {
         self.str_to_index.get(s).map(|x| x.clone())
+    }
+
+    pub fn get_or_else_add(&mut self, s: &str) -> BagType {
+        match self.get(s) {
+            None => self.add(s.to_string()),
+            Some(v) => v
+        }
     }
 }
 
