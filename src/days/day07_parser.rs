@@ -5,7 +5,8 @@ use nom::{
     bytes::complete::{take_until, tag}, 
     multi::many1_count,
     character::complete::digit1,
-    combinator::opt,
+    combinator::{opt, map},
+    branch::alt,
     sequence::preceded
 };
 
@@ -31,9 +32,13 @@ fn parse_elements<'a>(
 ) -> impl FnMut(&str) -> IResult<&str, ()> + 'a {
 
     move |i: &str| {
-        let (i_remain, _) = many1_count(
-            parse_element(rule, regist)
-        )(i)?;
+        let (i_remain, _) = alt((
+            map(tag("no other bags"), |_| 0),
+            many1_count(
+                parse_element(rule, regist)
+            )
+        ))(i)?;
+
         Ok((i_remain,()))
     }
 }
@@ -74,11 +79,28 @@ fn parse_element<'a>(
 mod test {
     use super::*;
 
+    fn parse_and_back_to_str(s: &str, regist: &mut BagTypeRegist) -> String {
+        parse_rule(s, regist).unwrap().1.to_str(regist)
+    }
+
     #[test]
     fn parse() {
         let mut regist = BagTypeRegist::default();
         let i = "light red bags contain 1 bright white bag, 2 muted yellow bags.";
-        let o = parse_rule(i, &mut regist).unwrap().1;
-        assert_eq!(o.to_str(&regist), i);
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "dark orange bags contain 3 bright white bags, 4 muted yellow bags.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "bright white bags contain 1 shiny gold bag.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "muted yellow bags contain 2 shiny gold bags, 9 faded blue bags.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "shiny gold bags contain 1 dark olive bag, 2 vibrant plum bags.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "dark olive bags contain 3 faded blue bags, 4 dotted black bags.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
+        let i = "faded blue bags contain no other bags.";
+        assert_eq!(parse_and_back_to_str(i, &mut regist), i);
     }
 }
