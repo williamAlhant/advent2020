@@ -1,6 +1,6 @@
 type BagType = usize;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BagTypeRegist {
     index_to_str: Vec<String>,
     str_to_index: std::collections::HashMap<String, BagType>
@@ -63,6 +63,10 @@ impl BagTypeRegist {
             None => self.add(s.to_string()),
             Some(v) => v
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.index_to_str.len()
     }
 }
 
