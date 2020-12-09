@@ -13,13 +13,59 @@ fn main() -> Result<()> {
 }
 
 fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<i64> {
-    let instructions = Instructions::from_lines(lines)?;
+    let mut instructions = Instructions::from_lines(lines)?;
     let mut context = InstrContext {
         acc: 0,
         pc: 0,
         ..Default::default()
     };
-    instructions.run(&mut context)
+    instructions.run(&mut context)?;
+
+    let flow = context.flow.clone();
+    let mut swapped_instr_i = 0;
+
+    while context.pc != instructions.instr.len() {
+
+        loop {
+            let instr = &mut instructions.instr[flow[swapped_instr_i]];
+            match instr {
+                Instruction::Acc(_) => {},
+                Instruction::Jmp(v) => {
+                    *instr = Instruction::Nop(v.clone());
+                    break;
+                },
+                Instruction::Nop(v) => {
+                    *instr = Instruction::Jmp(v.clone());
+                    break;
+                },
+            }
+            swapped_instr_i += 1;
+        }
+
+        // reset context before running
+        context.acc = 0;
+        context.pc = 0;
+        context.visited.clear();
+        instructions.run(&mut context)?;
+        println!("Tried to swap {} out of {}", swapped_instr_i, flow.len());
+
+        // restore original flow
+        let instr = &mut instructions.instr[flow[swapped_instr_i]];
+        match instr {
+            Instruction::Acc(_) => {},
+            Instruction::Jmp(v) => {
+                *instr = Instruction::Nop(v.clone());
+            },
+            Instruction::Nop(v) => {
+                *instr = Instruction::Jmp(v.clone());
+            },
+        };
+
+        // break before increment in prev loop so must increment here
+        swapped_instr_i += 1;
+    }
+    
+    Ok(context.acc)
 }
 
 struct Instructions {
@@ -29,7 +75,7 @@ struct Instructions {
 enum Instruction {
     Acc(i32),
     Jmp(i32),
-    Nop
+    Nop(i32)
 }
 
 impl Instruction {
@@ -38,7 +84,7 @@ impl Instruction {
         let instr = match &line[0..3] {
             "acc" => Instruction::Acc(param),
             "jmp" => Instruction::Jmp(param),
-            "nop" => Instruction::Nop,
+            "nop" => Instruction::Nop(param),
             _ => bail!("Unrecognized op"),
         };
         Ok(instr)
@@ -63,15 +109,20 @@ impl Instructions {
 
         let instr = &self.instr;
         c.visited.resize(instr.len(), false);
+        c.flow.clear();
 
         loop {
-            if !(0..instr.len()).contains(&c.pc) {
+            if c.pc > instr.len() {
                 bail!("pc out of instr range");
+            }
+            else if c.pc == instr.len() {
+                return Ok(c.acc);
             }
             else if c.visited[c.pc] {
                 return Ok(c.acc);
             }
             c.visited[c.pc] = true;
+            c.flow.push(c.pc);
             match instr[c.pc] {
                 Instruction::Acc(val) => {
                     c.acc += val as i64;
@@ -84,7 +135,7 @@ impl Instructions {
                     }
                     c.pc = t as usize;
                 },
-                Instruction::Nop => {
+                Instruction::Nop(_) => {
                     c.pc += 1;
                 }
             }
@@ -96,5 +147,6 @@ impl Instructions {
 struct InstrContext {
     acc: i64,
     pc: usize,
-    visited: Vec<bool>
+    visited: Vec<bool>,
+    flow: Vec<usize>
 }
