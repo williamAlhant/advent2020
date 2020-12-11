@@ -21,6 +21,47 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
         nums.push(num);
     }
 
+    let part_1_answer = 393911906;
+
+    for i in 0..nums.len() {
+        let mut sum = nums[i];
+        for j in (i + 1)..nums.len() {
+            sum += nums[j];
+            if sum == part_1_answer {
+                return Ok(smallest_plus_largest(&nums[i..=j]));
+            }
+            else if sum > part_1_answer {
+                break;
+            }
+        }
+    }
+
+    bail!("answer not found");
+}
+
+fn smallest_plus_largest(nums: &[u64]) -> u64 {
+    let mut min = nums[0];
+    let mut max = nums[0];
+
+    for &x in nums {
+        if x > max {
+            max = x;
+        }
+        if x < min {
+            min = x;
+        }
+    }
+
+    min + max
+}
+
+fn print_result_part_1(nums: &Vec<u64>, valid: &Vec<bool>) {
+    for (n, v) in nums.iter().zip(valid) {
+        println!("{} : {}", n, v);
+    }
+}
+
+fn get_part_1_answer(nums: &Vec<u64>) -> Result<u64> {
     let preamble_len = 25;
     let mut is_valid: Vec<bool> = vec![false; nums.len()];
 
@@ -45,10 +86,4 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
     }
 
     bail!("answer not found");
-}
-
-fn print_result(nums: &Vec<u64>, valid: &Vec<bool>) {
-    for (n, v) in nums.iter().zip(valid) {
-        println!("{} : {}", n, v);
-    }
 }
