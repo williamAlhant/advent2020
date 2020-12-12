@@ -22,7 +22,7 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
     let mut num_occupied = 0;
 
     for x in 0..map.width {
-        for y in 0..map.heigth {
+        for y in 0..map.height {
             let square = map.square(x, y).unwrap();
             if square == Square::Occupied {
                 num_occupied += 1;
@@ -34,7 +34,7 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
 }
 
 fn fill_seats(m: &mut Map) {
-    let max_adjacent_seats = 4;
+    let max_adjacent_seats = 5;
 
     let mut changed = true;
     let mut num_iter = 0;
@@ -44,9 +44,9 @@ fn fill_seats(m: &mut Map) {
         let mut new_map = m.clone();
 
         for x in 0..m.width {
-            for y in 0..m.heigth {
+            for y in 0..m.height {
                 let square = m.square(x, y).unwrap();
-                let n = num_adjacent_occupied(x, y, &m);
+                let n = num_visible_occupied(x, y, &m);
 
                 match square {
                     Square::Empty => {
@@ -76,7 +76,7 @@ fn num_adjacent_occupied(x: usize, y: usize, m: &Map) -> usize {
     let xp_start = (x as i64 -1).max(0) as usize;
     let yp_start = (y as i64 -1).max(0) as usize;
     for xp in xp_start..=(x+1).min(m.width - 1) {
-        for yp in yp_start..=(y+1).min(m.heigth - 1) {
+        for yp in yp_start..=(y+1).min(m.height - 1) {
             if m.square(xp, yp).unwrap() == Square::Occupied {
                 n += 1;
             }
@@ -90,6 +90,101 @@ fn num_adjacent_occupied(x: usize, y: usize, m: &Map) -> usize {
     n
 }
 
+fn num_visible_occupied(x: usize, y: usize, m: &Map) -> usize {
+    let mut num = 0;
+    num += num_visible_occupied_in_direction((1, 0), x, y, m);
+    num += num_visible_occupied_in_direction((0, 1), x, y, m);
+    num += num_visible_occupied_in_direction((1, -1), x, y, m);
+    num += num_visible_occupied_in_direction((1, 1), x, y, m);
+    num
+}
+
+fn num_visible_occupied_in_direction(
+    direction: Direction, x: usize, y: usize, m: &Map
+) -> usize {
+
+    let mut num = 0;
+
+    for (xp, yp) in 
+        SquareIterator::new(x, y, direction, m.width, m.height
+    ) {
+        let s = m.square(xp, yp).unwrap();
+        if s == Square::Occupied {
+            num += 1;
+            break;
+        }
+        else if s == Square::Empty {
+            break;
+        }
+    }
+
+    let direction = (-direction.0, -direction.1);
+
+    for (xp, yp) in 
+        SquareIterator::new(x, y, direction, m.width, m.height
+    ) {
+        let s = m.square(xp, yp).unwrap();
+        if s == Square::Occupied {
+            num += 1;
+            break;
+        }
+        else if s == Square::Empty {
+            break;
+        }
+    }
+
+    num
+}
+
+type SquareCoord = (usize, usize);
+type Direction = (i32, i32);
+
+struct SquareIterator {
+    start_x: usize,
+    start_y: usize,
+    direction: Direction,
+    x: usize,
+    y: usize,
+    map_width: usize,
+    map_height: usize
+}
+
+impl SquareIterator {
+    fn new(x: usize, y: usize, direction: Direction, map_width: usize, map_height: usize) -> Self {
+        Self {
+            start_x: x,
+            start_y: y,
+            direction,
+            x,
+            y,
+            map_width,
+            map_height
+        }
+    }
+}
+
+impl Iterator for SquareIterator {
+    type Item = SquareCoord;
+
+    fn next(&mut self) -> Option<SquareCoord> {
+
+        let x = self.x as i32 + self.direction.0;
+        if x < 0 || x >= self.map_width as i32 {
+            return None;
+        }
+
+        let y = self.y as i32 + self.direction.1;
+        if y < 0 || y >= self.map_height as i32 {
+            return None;
+        }
+
+        self.x = x as usize;
+        self.y = y as usize;
+
+        Some((self.x, self.y))
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Square {
     Empty,
@@ -101,7 +196,7 @@ enum Square {
 struct Map {
     data: Vec<Square>,
     width: usize,
-    heigth: usize
+    height: usize
 }
 
 impl Map {
@@ -145,7 +240,7 @@ impl Map {
             line_count += 1;
         }
 
-        map.heigth = line_count;
+        map.height = line_count;
 
         Ok(map)
     }
@@ -153,7 +248,7 @@ impl Map {
 
 impl std::fmt::Display for Map {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for y in 0..self.heigth {
+        for y in 0..self.height {
             for x in 0..self.width {
                 let square = self.square(x, y).unwrap();
                 f.write_char(match square {
