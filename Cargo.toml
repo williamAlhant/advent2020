@@ -12,6 +12,7 @@ anyhow = "*"
 thiserror = "*"
 nom = "*"
 nalgebra = "*"
+modinverse = "*"
 
 [[bin]]
 name = "day04"

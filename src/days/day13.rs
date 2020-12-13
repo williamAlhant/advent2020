@@ -1,6 +1,7 @@
 use advent2020::util::input;
 use advent2020::util;
 use anyhow::{Result, bail, Context, anyhow};
+use modinverse::modinverse;
 
 fn main() -> Result<()> {
     
@@ -17,37 +18,37 @@ fn do_the_thing(mut lines: impl Iterator<Item = util::Result<String>>) -> Result
     let first_line = unwrap_opt_result_str(lines.next())?;
     let second_line = unwrap_opt_result_str(lines.next())?;
 
-    let min_timestamp: u64 = first_line.parse()?;
+    let mut coprimes: Vec<u64> = Vec::new();
+    let mut remainders: Vec<u64> = Vec::new();
 
-    let mut bus_ids: Vec<u64> = Vec::new();
-    for bus_id in second_line.split(",") {
+    for (i, bus_id) in second_line.split(",").enumerate() {
         if bus_id == "x" {
             continue;
         }
 
         let bus_id: u64 = bus_id.parse()?;
-        bus_ids.push(bus_id);
+        coprimes.push(bus_id);
+        
+        let remainder = (bus_id - ((i as u64) % bus_id)) % bus_id; // ugly way to convert -i to positive remainder
+        remainders.push(remainder);
     }
 
-    // for each bus_id, first departure at/after min_timestamp
-    let mut departures: Vec<u64> = Vec::new();
-    for &bus_id in &bus_ids {
-        let q = min_timestamp / bus_id;
-        let r = min_timestamp % bus_id;
+    let res = chinese_remainders(&coprimes, &remainders);
 
-        let departure = match r {
-            0 => min_timestamp,
-            _ => (q + 1) * bus_id
-        };
+    Ok(res)
+}
 
-        departures.push(departure);
+fn chinese_remainders(coprimes: &Vec<u64>, remainders: &Vec<u64>) -> u64 {
+    let mut x = 0;
+    let product_of_m = coprimes.iter().fold(1, |acc, x| acc * x);
+    for (&m, &a) in coprimes.iter().zip(remainders) {
+        let b = product_of_m / m;
+        // modinverse is broken with unsigned arguments
+        let bp = modinverse(b as i64, m as i64).unwrap() as u64;
+        x += a * b * bp;
+        x = x % product_of_m;
     }
-
-    let min_departure_index = min_index(&departures);
-    let min_departure = departures[min_departure_index];
-    let min_bus_id = bus_ids[min_departure_index];
-
-    Ok((min_departure - min_timestamp) * min_bus_id)
+    x
 }
 
 fn min_index(v: &Vec<u64>) -> usize {
