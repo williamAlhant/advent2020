@@ -16,7 +16,7 @@ fn main() -> Result<()> {
 fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64> {
 
     let mut ship_state = ShipState {
-        direction: Vec2::from(Direction::EAST),
+        waypoint: Vec2::from([10, 1]),
         position: Vec2::from([0, 0])
     };
 
@@ -53,28 +53,28 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
 type Vec2 = Vector2<i32>;
 
 struct ShipState {
-    direction: Vec2,
-    position: Vec2
+    position: Vec2,
+    waypoint: Vec2
 }
 
 impl ShipState {
     fn move_forward(&mut self, length: i32) {
-        self.position = self.position + self.direction * length;
+        self.position = self.position + self.waypoint * length;
     }
 
     fn move_in_direction(&mut self, direction: Vec2, length: i32) {
-        self.position = self.position + direction * length;
+        self.waypoint = self.waypoint + direction * length;
     }
 
     fn turn_quarters_clockwise(&mut self, quarters: usize) {
         for _ in 0..quarters {
-            self.direction = Vec2::new(self.direction[1], -self.direction[0]);
+            self.waypoint = Vec2::new(self.waypoint[1], -self.waypoint[0]);
         }
     }
 
     fn turn_quarters_counterclockwise(&mut self, quarters: usize) {
         for _ in 0..quarters {
-            self.direction = Vec2::new(-self.direction[1], self.direction[0]);
+            self.waypoint = Vec2::new(-self.waypoint[1], self.waypoint[0]);
         }
     }
 }
