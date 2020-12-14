@@ -17,3 +17,7 @@ modinverse = "*"
 [[bin]]
 name = "day13"
 path = "src/days/day13.rs"
+
+[[bin]]
+name = "day14"
+path = "src/days/day14.rs"
