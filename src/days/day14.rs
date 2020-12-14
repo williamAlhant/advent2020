@@ -29,8 +29,7 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
                 mask = new_mask;
             },
             Instruction::Mem(instr) => {
-                let new_value = (instr.value & mask.and) | mask.or;
-                mem.insert(instr.addr, new_value);
+                update_mem(&instr, &mask, &mut mem);
             }
         }
     }
@@ -40,10 +39,31 @@ fn do_the_thing(lines: impl Iterator<Item = util::Result<String>>) -> Result<u64
     Ok(ret)
 }
 
+fn update_mem(instr: &MemParam, mask: &MaskParam, mem: &mut HashMap<u64, u64>) {
+    let mut base = instr.addr;
+    // set floating bits to 0
+    for &i in &mask.floating {
+        base &= !(1 << i);
+    }
+    // set bits to 1
+    base |= mask.or;
+
+    // update every possible address
+    for floating_bits in 0..(2 as u32).pow(mask.floating.len() as u32) {
+        let mut floating_mask: u64 = 0;
+        for i in 0..mask.floating.len() {
+            floating_mask |= ((floating_bits as u64 >> i) & 1) << mask.floating[i];
+        }
+
+        let addr = base | floating_mask;
+        mem.insert(addr, instr.value);
+    }
+}
+
 #[derive(Default)]
 struct MaskParam {
     or: u64,
-    and: u64
+    floating: Vec<u8>
 }
 
 struct MemParam {
@@ -61,22 +81,23 @@ impl Instruction {
         if s.starts_with("mask") {
             let mask_string = &s["mask = ".len()..];
             let mut or = 0;
-            let mut nand = 0;
+            let mut floating = Vec::new();
+
             for (i, c) in mask_string.chars().rev().enumerate() {
                 match c {
-                    '0' => {
-                        nand |= 1 << i;
-                    },
+                    '0' => {},
                     '1' => {
                         or |= 1 << i;
                     },
-                    _ => {}
+                    _ => {
+                        floating.push(i as u8);
+                    }
                 }
             }
-            let and = !nand;
+
             Ok(Instruction::Mask(MaskParam {
                 or,
-                and
+                floating
             }))
         }
         else if s.starts_with("mem") {
