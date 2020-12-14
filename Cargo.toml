@@ -15,41 +15,5 @@ nalgebra = "*"
 modinverse = "*"
 
 [[bin]]
-name = "day04"
-path = "src/days/day04.rs"
-
-[[bin]]
-name = "day05"
-path = "src/days/day05.rs"
-
-[[bin]]
-name = "day06"
-path = "src/days/day06.rs"
-
-[[bin]]
-name = "day07"
-path = "src/days/day07.rs"
-
-[[bin]]
-name = "day08"
-path = "src/days/day08.rs"
-
-[[bin]]
-name = "day09"
-path = "src/days/day09.rs"
-
-[[bin]]
-name = "day10"
-path = "src/days/day10.rs"
-
-[[bin]]
-name = "day11"
-path = "src/days/day11.rs"
-
-[[bin]]
-name = "day12"
-path = "src/days/day12.rs"
-
-[[bin]]
 name = "day13"
 path = "src/days/day13.rs"
