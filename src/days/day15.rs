@@ -6,7 +6,7 @@ use std::collections::HashMap;
 fn main() -> Result<()> {
     
     let starting_numbers = vec![1,20,8,12,0,14];
-    let until = 2020;
+    let until = 30000000;
     let ans = do_the_thing(&starting_numbers, until)?;
     println!("Answer: {}", ans);
 
@@ -14,6 +14,8 @@ fn main() -> Result<()> {
 }
 
 fn do_the_thing(starting_numbers: &[u64], until: u64) -> Result<u64> {
+
+    let mut progress_indicator = ProgressIndicator::new(until);
 
     let mut occurences: HashMap<u64, Occur> = HashMap::new();
     let mut last_number = 0;
@@ -39,6 +41,8 @@ fn do_the_thing(starting_numbers: &[u64], until: u64) -> Result<u64> {
         }
 
         last_number = next;
+
+        progress_indicator.update(i);
     }
 
     Ok(last_number)
@@ -61,5 +65,31 @@ impl Occur {
         assert!(new > self.nm1);
         self.nm2 = Some(self.nm1);
         self.nm1 = new;
+    }
+}
+
+struct ProgressIndicator {
+    total: u64,
+    value_last_display: u64,
+    threshold: u64,
+}
+
+impl ProgressIndicator {
+    fn new(total: u64) -> Self {
+        Self {
+            total,
+            value_last_display: 0,
+            threshold: total / 10
+        }
+    }
+
+    fn update(&mut self, new_value: u64) {
+        assert!(new_value >= self.value_last_display);
+        assert!(new_value <= self.total);
+        if new_value - self.value_last_display > self.threshold {
+            let percent = (new_value * 100) / self.total;
+            println!("Progress: {}%", percent);
+            self.value_last_display = new_value;
+        }
     }
 }
